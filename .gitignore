@@ -1,0 +1,15 @@
+# Data files
+data/*.csv
+logs/*.log
+
+# Temporary files
+*.tmp
+*.bak
+*~
+
+# Archive
+scripts/archive/
+
+# System files
+.DS_Store
+Thumbs.db

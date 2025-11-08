@@ -4,66 +4,6 @@
 # 全ノード対応・汎用メトリクス収集スクリプト
 
 # ========================================
-# ヘルプ表示
-# ========================================
-show_help() {
-    cat << 'HELP'
-GOWENET メトリクス収集スクリプト
-
-使い方:
-    ./gowenet_metrics.sh [間隔] [継続時間]
-    ./gowenet_metrics.sh --help
-
-引数:
-    間隔        データ収集間隔（秒） デフォルト: 10秒
-    継続時間    データ収集の継続時間（秒） デフォルト: 300秒（5分）
-
-オプション:
-    --help, -h  このヘルプを表示
-
-実行例:
-    # デフォルト設定（10秒間隔、5分間）
-    ./gowenet_metrics.sh
-
-    # カスタム設定（5秒間隔、10分間）
-    ./gowenet_metrics.sh 5 600
-
-    # 1秒間隔、1時間（3600秒）
-    ./gowenet_metrics.sh 1 3600
-
-    # バックグラウンドで実行
-    nohup ./gowenet_metrics.sh 10 3600 > /dev/null 2>&1 &
-
-出力:
-    CSVファイル: ~/gowenet-metrics/data/metrics_[ホスト名]_[タイムスタンプ].csv
-    ログファイル: ~/gowenet-metrics/logs/metrics_collection.log
-
-収集されるメトリクス:
-    - タイムスタンプ
-    - ノード名/IP
-    - ブロック番号/ハッシュ/タイムスタンプ
-    - トランザクション数
-    - Gas使用量/制限
-    - ピア数
-    - バリデータ数
-    - 平均ブロック時間
-
-ノード自動検出:
-    daikon   (Pi1): 192.168.3.86:9654
-    tamago   (Pi2): 192.168.3.75:9650
-    tomato   (Pi3): 192.168.3.106:9650
-    tamanegi (Pi4): 192.168.3.73:9650
-
-HELP
-}
-
-# ヘルプオプションのチェック
-if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
-    show_help
-    exit 0
-fi
-
-# ========================================
 # 設定セクション
 # ========================================
 
@@ -107,7 +47,6 @@ LOG_FILE="${LOG_DIR}/metrics_collection.log"
 # 収集間隔（秒）
 INTERVAL="${1:-10}"
 DURATION="${2:-300}"  # デフォルト5分
-
 
 # ========================================
 # 初期化
@@ -189,7 +128,7 @@ get_peer_count() {
 }
 
 get_bootstrap_status() {
-    local result=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"info.isBootstrapped","params":{"chain":"2tGwFCjwr3w6fW774ytz982h5Th9eiALrKFanmBKZjxQSqTBxW"},"id":1}' \
+    local result=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"info.isBootstrapped","params":{"chain":"C"},"id":1}' \
       -H 'content-type:application/json' "$INFO_URL" 2>/dev/null)
     
     echo "$result" | jq -r '.result.isBootstrapped // false' 2>/dev/null || echo "false"

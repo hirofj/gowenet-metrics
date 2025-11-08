@@ -189,7 +189,7 @@ get_peer_count() {
 }
 
 get_bootstrap_status() {
-    local result=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"info.isBootstrapped","params":{"chain":"2tGwFCjwr3w6fW774ytz982h5Th9eiALrKFanmBKZjxQSqTBxW"},"id":1}' \
+    local result=$(curl -s -X POST --data '{"jsonrpc":"2.0","method":"info.isBootstrapped","params":{"chain":"C"},"id":1}' \
       -H 'content-type:application/json' "$INFO_URL" 2>/dev/null)
     
     echo "$result" | jq -r '.result.isBootstrapped // false' 2>/dev/null || echo "false"

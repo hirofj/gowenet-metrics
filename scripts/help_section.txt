@@ -1,0 +1,60 @@
+#!/bin/bash
+
+# GOWENET Metrics Collection - Unified Script for Pi1-Pi4
+# 全ノード対応・汎用メトリクス収集スクリプト
+
+# ========================================
+# ヘルプ表示
+# ========================================
+show_help() {
+    cat << 'HELP'
+GOWENET メトリクス収集スクリプト
+
+使い方:
+    ./gowenet_metrics.sh [間隔] [継続時間]
+    ./gowenet_metrics.sh --help
+
+引数:
+    間隔        データ収集間隔（秒）デフォルト: 10秒
+    継続時間    データ収集の継続時間（秒）デフォルト: 300秒（5分）
+
+オプション:
+    --help, -h  このヘルプを表示
+
+実行例:
+    # デフォルト設定（10秒間隔、5分間）
+    ./gowenet_metrics.sh
+
+    # カスタム設定（5秒間隔、10分間）
+    ./gowenet_metrics.sh 5 600
+
+    # 1秒間隔、1時間（3600秒）
+    ./gowenet_metrics.sh 1 3600
+
+出力:
+    CSVファイル: ~/gowenet-metrics/data/metrics_[ホスト名]_[タイムスタンプ].csv
+    ログファイル: ~/gowenet-metrics/logs/metrics_collection.log
+
+収集されるメトリクス:
+    - タイムスタンプ
+    - ブロック番号
+    - ピア数
+    - バリデータ数
+    - CPUコア1-4の温度
+    - CPU使用率
+    - メモリ使用率
+    - ディスク使用率
+
+ノード情報:
+    自動検出されたノード: $(hostname)
+    IPアドレス: $(hostname -I | awk '{print $1}')
+
+HELP
+}
+
+# ヘルプオプションのチェック
+if [[ "$1" == "--help" ]] || [[ "$1" == "-h" ]]; then
+    show_help
+    exit 0
+fi
+

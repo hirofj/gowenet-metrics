@@ -68,16 +68,17 @@ declare -A NODE_NAMES=(
 
 NODE_NAME="${NODE_NAMES[$HOSTNAME]:-$HOSTNAME}"
 
+
 # MQTT設定（環境変数で制御）
-MQTT_ENABLED=${MQTT_ENABLED:-false}
+# MQTT_ENABLEDは自動判定（環境変数が設定されていない場合のみ）
 MQTT_BROKER=${MQTT_BROKER:-"192.168.3.86"}
 MQTT_PORT=${MQTT_PORT:-1883}
 MQTT_TOPIC="gowenet/metrics/${HOSTNAME}"
 MQTT_QOS=${MQTT_QOS:-1}
 MQTT_RETAIN=${MQTT_RETAIN:-false}
 
-# MQTTの自動判定（Pi1はデフォルトで無効、Pi2-4は有効）
-if [ -z "$MQTT_ENABLED" ]; then
+# MQTTの自動判定（環境変数MQTT_ENABLEDが未設定の場合のみ）
+if [ -z "${MQTT_ENABLED+x}" ]; then
     case "$HOSTNAME" in
         "daikon")
             MQTT_ENABLED=false  # Pi1は受信側なので送信しない
@@ -90,8 +91,6 @@ if [ -z "$MQTT_ENABLED" ]; then
             ;;
     esac
 fi
-
-# ローカルRPCエンドポイント（応答性チェック用）
 LOCAL_RPC="http://localhost:9650/ext/health"
 
 # 出力設定

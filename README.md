@@ -6,7 +6,7 @@ GOWENETネットワークのブロックチェーンメトリクスとリソー�
 
 このツールは2つのスクリプトで構成されています：
 
-1. **gowenet_metrics_pi1.sh** - ブロックチェーンメトリクス収集（Pi1のみ）
+1. **gowenet_blockchain.sh** - ブロックチェーンメトリクス収集（Pi1のみ）
 2. **gowenet_resources.sh** - リソースメトリクス収集（全ノード）
 
 ## 🚀 クイックスタート
@@ -17,7 +17,7 @@ GOWENETネットワークのブロックチェーンメトリクスとリソー�
 cd ~/gowenet-metrics
 
 # ブロックチェーンメトリクス収集（バックグラウンド）
-nohup ./scripts/gowenet_metrics_pi1.sh 10 3600 > /dev/null 2>&1 &
+nohup ./scripts/gowenet_blockchain.sh 10 3600 > /dev/null 2>&1 &
 
 # リソースメトリクス収集（バックグラウンド）
 nohup ./scripts/gowenet_resources.sh 10 3600 > /dev/null 2>&1 &
@@ -38,7 +38,7 @@ nohup ./scripts/gowenet_resources.sh 10 3600 > /dev/null 2>&1 &
 
 **コマンド:**
 ```bash
-./scripts/gowenet_metrics_pi1.sh [間隔] [継続時間]
+./scripts/gowenet_blockchain.sh [間隔] [継続時間]
 ```
 
 **引数:**
@@ -48,16 +48,16 @@ nohup ./scripts/gowenet_resources.sh 10 3600 > /dev/null 2>&1 &
 **実行例:**
 ```bash
 # ヘルプを表示
-./scripts/gowenet_metrics_pi1.sh --help
+./scripts/gowenet_blockchain.sh --help
 
 # デフォルト設定（10秒間隔、5分間）
-./scripts/gowenet_metrics_pi1.sh
+./scripts/gowenet_blockchain.sh
 
 # 5秒間隔で1時間収集
-./scripts/gowenet_metrics_pi1.sh 5 3600
+./scripts/gowenet_blockchain.sh 5 3600
 
 # バックグラウンドで実行
-nohup ./scripts/gowenet_metrics_pi1.sh 10 3600 > /dev/null 2>&1 &
+nohup ./scripts/gowenet_blockchain.sh 10 3600 > /dev/null 2>&1 &
 ```
 
 ### 2. リソースメトリクス収集（全ノード）
@@ -198,7 +198,7 @@ tail -f ~/gowenet-metrics/logs/resource_collection.log
 
 ```bash
 # ブロックチェーン収集停止
-pkill -f gowenet_metrics_pi1.sh
+pkill -f gowenet_blockchain.sh
 
 # リソース収集停止
 pkill -f gowenet_resources.sh
@@ -226,7 +226,7 @@ tail -5 $(ls -t ~/gowenet-metrics/data/resources_*.csv | head -1)
 
 ```bash
 # 実行権限を付与
-chmod +x ~/gowenet-metrics/scripts/gowenet_metrics_pi1.sh
+chmod +x ~/gowenet-metrics/scripts/gowenet_blockchain.sh
 chmod +x ~/gowenet-metrics/scripts/gowenet_resources.sh
 ```
 
@@ -265,7 +265,7 @@ ps aux | grep gowenet
 ```
 gowenet-metrics/
 ├── scripts/
-│   ├── gowenet_metrics_pi1.sh      # ブロックチェーンメトリクス収集（Pi1専用）
+│   ├── gowenet_blockchain.sh      # ブロックチェーンメトリクス収集（Pi1専用）
 │   ├── gowenet_resources.sh        # リソースメトリクス収集（全ノード）
 │   ├── gowenet_metrics.sh          # 旧統合版（廃止予定）
 │   └── archive/                    # アーカイブ

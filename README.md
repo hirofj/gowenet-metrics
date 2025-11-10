@@ -1,353 +1,276 @@
-# GOWENET Metrics Collection
+# GOWENET Metrics Collection System
 
-GOWENETネットワークのブロックチェーンメトリクスとリソースメトリクスを収集・分析するツール
+GOWENETブロックチェーンネットワークのメトリクス収集システム
 
-## 📋 概要
+## システム構成
 
-このツールは2つのスクリプトで構成されています：
+### ノード構成
 
-1. **gowenet_blockchain.sh** - ブロックチェーンメトリクス収集（Pi1のみ）
-2. **gowenet_resources.sh** - リソースメトリクス収集（全ノード）
+| デバイス | ホスト名 | IPアドレス | ポート | 役割 |
+|---------|---------|-----------|-------|------|
+| Pi1 | daikon | 192.168.3.86 | 9654 | ブロックチェーン収集 + MQTT Subscriber |
+| Pi2 | tamago | 192.168.3.75 | 9650 | リソース収集（MQTT送信） |
+| Pi3 | tomato | 192.168.3.106 | 9650 | リソース収集（MQTT送信） |
+| Pi4 | tamanegi | 192.168.3.73 | 9650 | リソース収集（MQTT送信） |
 
-## 🚀 クイックスタート
+### データフロー
 
-### Pi1 (daikon) での実行
+```
+Pi2-Pi4 (データ送信)
+    ↓ MQTT (gowenet/metrics/*)
+Pi1 (MQTT Subscriber + データ収集)
+    ↓
+CSVファイル保存 (data/)
+```
+
+## 使用方法
+
+### 1. 実験開始前の準備（Pi1: daikon）
+
+MQTTサブスクライバーを起動してデータ受信の準備：
 
 ```bash
-cd ~/gowenet-metrics
+./scripts/gowenet_mqtt_subscriber.sh start
+```
 
-# ブロックチェーンメトリクス収集（バックグラウンド）
+起動時刻が自動的にファイル名に使用されます（例：`resources_tomato_20251110_104530.csv`）
+
+### 2. 各ノードでメトリクス収集開始
+
+#### Pi1 (daikon) - ブロックチェーンメトリクス収集
+
+```bash
+./collectMetrics_pi1.sh
+```
+
+または手動で：
+
+```bash
 nohup ./scripts/gowenet_blockchain.sh 10 3600 > /dev/null 2>&1 &
-
-# リソースメトリクス収集（バックグラウンド）
 nohup ./scripts/gowenet_resources.sh 10 3600 > /dev/null 2>&1 &
 ```
 
-### Pi2-Pi4 (tamago, tomato, tamanegi) での実行
+#### Pi2-Pi4 (tamago, tomato, tamanegi) - リソースメトリクス収集
 
 ```bash
-cd ~/gowenet-metrics
-
-# リソースメトリクス収集のみ
-nohup ./scripts/gowenet_resources.sh 10 3600 > /dev/null 2>&1 &
+./collectMetrics_piX.sh
 ```
 
-## 📖 詳細な使い方
+または手動で：
 
-### 1. ブロックチェーンメトリクス収集（Pi1専用）
+```bash
+nohup ./scripts/gowenet_resources_mqtt.sh 10 3600 > /dev/null 2>&1 &
+```
 
-**コマンド:**
+### 3. 実験終了（Pi1: daikon）
+
+MQTTサブスクライバーを停止：
+
+```bash
+./scripts/gowenet_mqtt_subscriber.sh stop
+```
+
+### サブスクライバーの管理コマンド
+
+```bash
+# 起動
+./scripts/gowenet_mqtt_subscriber.sh start
+
+# 停止
+./scripts/gowenet_mqtt_subscriber.sh stop
+
+# 状態確認
+./scripts/gowenet_mqtt_subscriber.sh status
+```
+
+## スクリプト詳細
+
+### ブロックチェーンメトリクス収集（Pi1のみ）
+
 ```bash
 ./scripts/gowenet_blockchain.sh [間隔] [継続時間]
 ```
 
-**引数:**
-- `間隔`: データ収集間隔（秒） デフォルト: 10秒
-- `継続時間`: 収集期間（秒） デフォルト: 300秒（5分）
+- **間隔**: メトリクス収集間隔（秒）デフォルト: 10秒
+- **継続時間**: 収集継続時間（秒）デフォルト: 300秒（5分）
 
-**実行例:**
-```bash
-# ヘルプを表示
-./scripts/gowenet_blockchain.sh --help
+収集データ：
+- ブロック高
+- トランザクション数
+- ガス使用量
+- レスポンス時間
+- タイムスタンプ
 
-# デフォルト設定（10秒間隔、5分間）
-./scripts/gowenet_blockchain.sh
+### リソースメトリクス収集（全ノード）
 
-# 5秒間隔で1時間収集
-./scripts/gowenet_blockchain.sh 5 3600
+#### Pi1 (ローカル収集)
 
-# バックグラウンドで実行
-nohup ./scripts/gowenet_blockchain.sh 10 3600 > /dev/null 2>&1 &
-```
-
-### 2. リソースメトリクス収集（全ノード）
-
-**コマンド:**
 ```bash
 ./scripts/gowenet_resources.sh [間隔] [継続時間]
 ```
 
-**引数:**
-- `間隔`: データ収集間隔（秒） デフォルト: 10秒
-- `継続時間`: 収集期間（秒） デフォルト: 300秒（5分）
+#### Pi2-Pi4 (MQTT送信)
 
-**実行例:**
 ```bash
-# ヘルプを表示
-./scripts/gowenet_resources.sh --help
+./scripts/gowenet_resources_mqtt.sh [間隔] [継続時間]
+```
 
-# デフォルト設定（10秒間隔、5分間）
-./scripts/gowenet_resources.sh
+収集データ：
+- CPU使用率
+- メモリ使用量
+- ディスク使用量
+- ネットワーク送受信量
+- システム負荷
+- Avalancheプロセス数
+- 温度
+- RPCレスポンス時間
 
-# 5秒間隔で1時間収集
-./scripts/gowenet_resources.sh 5 3600
+### MQTT Subscriber（Pi1のみ）
 
-# バックグラウンドで実行
+```bash
+./scripts/gowenet_mqtt_subscriber.sh {start|stop|status}
+```
+
+機能：
+- Pi2-Pi4からのメトリクスをMQTT経由で受信
+- 起動時刻でファイル名を生成
+- ホスト名ごとにCSVファイルを作成
+- バックグラウンドで動作
+
+## 出力ファイル
+
+### データファイル（`~/gowenet-metrics/data/`）
+
+#### ブロックチェーンメトリクス（Pi1のみ）
+- `blockchain_YYYYMMDD_HHMMSS.csv`
+
+#### リソースメトリクス（全ノード）
+- `resources_daikon_YYYYMMDD_HHMMSS.csv` (Pi1 - ローカル)
+- `resources_tamago_YYYYMMDD_HHMMSS.csv` (Pi2 - MQTT)
+- `resources_tomato_YYYYMMDD_HHMMSS.csv` (Pi3 - MQTT)
+- `resources_tamanegi_YYYYMMDD_HHMMSS.csv` (Pi4 - MQTT)
+
+**注意**: MQTT経由のファイルは、全て同じタイムスタンプ（Subscriber起動時刻）で作成されます。
+
+### ログファイル（`~/gowenet-metrics/logs/`）
+
+- `blockchain_collection.log` - ブロックチェーン収集ログ
+- `resource_collection.log` - リソース収集ログ
+- `mqtt_subscriber.log` - MQTTサブスクライバーログ
+
+## MQTT設定
+
+### ブローカー
+- **ホスト**: 192.168.3.86 (Pi1: daikon)
+- **ポート**: 1883
+
+### トピック
+- `gowenet/metrics/#` - 全メトリクスのルートトピック
+- `gowenet/metrics/{hostname}` - 各ホストのメトリクスデータ
+- `gowenet/metrics/{hostname}/status` - ステータスメッセージ
+
+### QoS
+- レベル1（最低1回配信保証）
+
+## 実験ワークフロー例
+
+### 1時間の実験を実施する場合
+
+```bash
+# 1. Pi1でMQTTサブスクライバー起動
+ssh hirofj@daikon.local
+./scripts/gowenet_mqtt_subscriber.sh start
+
+# 2. Pi1でブロックチェーン収集開始
+nohup ./scripts/gowenet_blockchain.sh 10 3600 > /dev/null 2>&1 &
 nohup ./scripts/gowenet_resources.sh 10 3600 > /dev/null 2>&1 &
+
+# 3. Pi2-Pi4で収集開始
+ssh hirofj@tamago.local "./gowenet-metrics/scripts/gowenet_resources_mqtt.sh 10 3600"
+ssh hirofj@tomato.local "./gowenet-metrics/scripts/gowenet_resources_mqtt.sh 10 3600"
+ssh hirofj@tamanegi.local "./gowenet-metrics/scripts/gowenet_resources_mqtt.sh 10 3600"
+
+# 4. 実験終了後、Pi1でサブスクライバー停止
+ssh hirofj@daikon.local
+./scripts/gowenet_mqtt_subscriber.sh stop
 ```
 
-## 📊 収集されるメトリクス
+## トラブルシューティング
 
-### ブロックチェーンメトリクス（Pi1のみ）
-
-| メトリクス | 説明 |
-|-----------|------|
-| `timestamp` | 収集時刻 |
-| `block_number` | 最新ブロック番号 |
-| `block_hash` | ブロックハッシュ |
-| `block_timestamp` | ブロックタイムスタンプ |
-| `tx_count` | トランザクション数 |
-| `gas_used` | 使用Gas量 |
-| `gas_limit` | Gas制限 |
-| `validator_count` | バリデータ数 |
-| `avg_block_time` | 平均ブロック時間（秒） |
-| `total_peers` | 接続ピア数 |
-
-### リソースメトリクス（全ノード）
-
-| メトリクス | 説明 |
-|-----------|------|
-| `timestamp` | 収集時刻 |
-| `node_name` | ノード名（ホスト名） |
-| `cpu_percent` | CPU使用率（%） |
-| `mem_used_mb` | 使用メモリ（MB） |
-| `mem_total_mb` | 総メモリ（MB） |
-| `mem_percent` | メモリ使用率（%） |
-| `swap_used_mb` | スワップ使用量（MB） |
-| `swap_percent` | スワップ使用率（%） |
-| `disk_used_gb` | ディスク使用量（GB） |
-| `disk_total_gb` | 総ディスク容量（GB） |
-| `disk_percent` | ディスク使用率（%） |
-| `net_rx_mb` | ネットワーク受信（MB） |
-| `net_tx_mb` | ネットワーク送信（MB） |
-| `load_1m` | 1分間のロードアベレージ |
-| `load_5m` | 5分間のロードアベレージ |
-| `load_15m` | 15分間のロードアベレージ |
-| `processes` | プロセス数 |
-| `avalanche_pids` | avalanchegoプロセスID |
-| `response_time_ms` | RPC応答時間（ms） |
-| `temp_celsius` | CPU温度（℃） |
-
-## 📁 出力ファイル
-
-### データファイル
-
-**保存先:** `~/gowenet-metrics/data/`
-
-**ファイル命名規則:**
-
-1. ブロックチェーンメトリクス（Pi1のみ）:
-   ```
-   blockchain_<YYYYMMDD>_<HHMMSS>.csv
-   ```
-   例: `blockchain_20251109_110057.csv`
-
-2. リソースメトリクス（全ノード）:
-   ```
-   resources_<hostname>_<YYYYMMDD>_<HHMMSS>.csv
-   ```
-   例: 
-   - `resources_daikon_20251109_110151.csv`
-   - `resources_tamago_20251109_110151.csv`
-   - `resources_tomato_20251109_110151.csv`
-   - `resources_tamanegi_20251109_110151.csv`
-
-### ログファイル
-
-**保存先:**
-- ブロックチェーン: `~/gowenet-metrics/logs/blockchain_collection.log`
-- リソース: `~/gowenet-metrics/logs/resource_collection.log`
+### MQTTサブスクライバーが起動しない
 
 ```bash
-# ログをリアルタイム表示
-tail -f ~/gowenet-metrics/logs/blockchain_collection.log
-tail -f ~/gowenet-metrics/logs/resource_collection.log
-```
-
-## 🖥️ 対応ノード
-
-スクリプトはホスト名から自動的にノード設定を検出します。
-
-| ノード | ホスト名 | IPアドレス | ポート | 役割 |
-|--------|----------|------------|--------|------|
-| Pi1 | daikon | 192.168.3.86 | 9654 | ブロックチェーン収集 + リソース収集 |
-| Pi2 | tamago | 192.168.3.75 | 9650 | リソース収集のみ |
-| Pi3 | tomato | 192.168.3.106 | 9650 | リソース収集のみ |
-| Pi4 | tamanegi | 192.168.3.73 | 9650 | リソース収集のみ |
-
-## 🔧 プロセス管理
-
-### 実行状態の確認
-
-```bash
-# ブロックチェーン収集プロセス確認
-ps aux | grep gowenet_metrics_pi1
-
-# リソース収集プロセス確認
-ps aux | grep gowenet_resources
-
-# すべてのメトリクス収集プロセス確認
-ps aux | grep gowenet
+# 状態確認
+./scripts/gowenet_mqtt_subscriber.sh status
 
 # ログ確認
-tail -f ~/gowenet-metrics/logs/blockchain_collection.log
+tail -f ~/gowenet-metrics/logs/mqtt_subscriber.log
+
+# 強制停止して再起動
+pkill -f mosquitto_sub
+rm -f ~/gowenet-metrics/logs/mqtt_subscriber.pid
+./scripts/gowenet_mqtt_subscriber.sh start
+```
+
+### データが保存されない
+
+```bash
+# MQTT接続確認
+mosquitto_sub -h 192.168.3.86 -p 1883 -t "gowenet/metrics/#" -v
+
+# 権限確認
+ls -l ~/gowenet-metrics/data/
+ls -l ~/gowenet-metrics/logs/
+```
+
+### ノードの収集スクリプトが動作しない
+
+```bash
+# ログ確認
 tail -f ~/gowenet-metrics/logs/resource_collection.log
-```
 
-### プロセスの停止
-
-```bash
-# ブロックチェーン収集停止
-pkill -f gowenet_blockchain.sh
-
-# リソース収集停止
-pkill -f gowenet_resources.sh
-
-# すべての収集停止
-pkill -f "gowenet_metrics\|gowenet_resources"
-```
-
-### データファイルの確認
-
-```bash
-# 最新のデータファイルを確認
-ls -lht ~/gowenet-metrics/data/ | head -10
-
-# 最新のブロックチェーンデータを表示
-tail -5 $(ls -t ~/gowenet-metrics/data/blockchain_*.csv | head -1)
-
-# 最新のリソースデータを表示
-tail -5 $(ls -t ~/gowenet-metrics/data/resources_*.csv | head -1)
-```
-
-## 🐛 トラブルシューティング
-
-### スクリプトが実行できない
-
-```bash
-# 実行権限を付与
-chmod +x ~/gowenet-metrics/scripts/gowenet_blockchain.sh
-chmod +x ~/gowenet-metrics/scripts/gowenet_resources.sh
-```
-
-### ノード接続エラー（Pi1）
-
-```bash
-# ノードの健全性を確認
-curl -X POST --data '{
-    "jsonrpc":"2.0",
-    "id"     :1,
-    "method" :"eth_blockNumber",
-    "params" :[]
-}' -H 'content-type:application/json;' http://192.168.3.86:9654/ext/bc/2tGwFCjwr3w6fW774ytz982h5Th9eiALrKFanmBKZjxQSqTBxW/rpc
-```
-
-### jqがインストールされていない
-
-```bash
-sudo apt-get update
-sudo apt-get install jq -y
-```
-
-### データが収集されない
-
-```bash
-# ログを確認
-tail -50 ~/gowenet-metrics/logs/blockchain_collection.log
-tail -50 ~/gowenet-metrics/logs/resource_collection.log
-
-# プロセス状態を確認
+# プロセス確認
 ps aux | grep gowenet
+
+# 手動実行でエラー確認
+./scripts/gowenet_resources_mqtt.sh 10 60
 ```
 
-## 📂 ディレクトリ構造
+## 必要なパッケージ
 
-```
-gowenet-metrics/
-├── scripts/
-│   ├── gowenet_blockchain.sh      # ブロックチェーンメトリクス収集（Pi1専用）
-│   ├── gowenet_resources.sh        # リソースメトリクス収集（全ノード）
-│   ├── gowenet_metrics.sh          # 旧統合版（廃止予定）
-│   └── archive/                    # アーカイブ
-├── data/                           # 収集されたCSVデータ
-│   ├── blockchain_*.csv            # ブロックチェーンデータ
-│   └── resources_*.csv             # リソースデータ
-├── logs/                           # 実行ログ
-│   ├── blockchain_collection.log   # ブロックチェーン収集ログ
-│   └── resource_collection.log     # リソース収集ログ
-└── README.md                       # このファイル
-```
+### Pi1 (daikon)
+- `mosquitto` - MQTTブローカー
+- `mosquitto-clients` - MQTTクライアント
+- `curl`, `jq` - API通信とJSON処理
+- `bc` - 計算処理
 
-## 🧹 メンテナンス
+### Pi2-Pi4 (tamago, tomato, tamanegi)
+- `mosquitto-clients` - MQTTクライアント
+- `curl`, `jq` - API通信とJSON処理
+- `bc` - 計算処理
 
-### 古いデータの削除
+### インストールコマンド
 
 ```bash
-# 30日以上前のデータを削除
-find ~/gowenet-metrics/data -name "*.csv" -mtime +30 -delete
+# Pi1のみ
+sudo apt-get update
+sudo apt-get install -y mosquitto mosquitto-clients curl jq bc
 
-# ログファイルのローテーション
-find ~/gowenet-metrics/logs -name "*.log" -size +100M -exec mv {} {}.old \;
+# Pi2-Pi4
+sudo apt-get update
+sudo apt-get install -y mosquitto-clients curl jq bc
 ```
 
-### データのバックアップ
+## バージョン情報
 
-```bash
-# tar圧縮でバックアップ
-tar -czf metrics-backup-$(date +%Y%m%d).tar.gz ~/gowenet-metrics/data/
+- **Version**: 4.0
+- **Last Updated**: 2025-11-10
+- **主な変更点**:
+  - MQTTサブスクライバーにstart/stop/statusコマンドを追加
+  - セッション管理をサブスクライバーの起動/停止で制御
+  - ファイル名をサブスクライバー起動時刻で統一
+  - start/endメッセージプロトコルを削除（シンプル化）
 
-# 特定期間のデータをバックアップ
-tar -czf metrics-blockchain-$(date +%Y%m%d).tar.gz ~/gowenet-metrics/data/blockchain_*.csv
-tar -czf metrics-resources-$(date +%Y%m%d).tar.gz ~/gowenet-metrics/data/resources_*.csv
-```
+## ライセンス
 
-### データの統計情報
-
-```bash
-# データファイル数を確認
-echo "Blockchain files: $(ls ~/gowenet-metrics/data/blockchain_*.csv 2>/dev/null | wc -l)"
-echo "Resource files: $(ls ~/gowenet-metrics/data/resources_*.csv 2>/dev/null | wc -l)"
-
-# データサイズを確認
-du -sh ~/gowenet-metrics/data/
-```
-
-## 📊 データ分析例
-
-### ブロックチェーンデータの確認
-
-```bash
-# 最新のブロック情報
-tail -1 $(ls -t ~/gowenet-metrics/data/blockchain_*.csv | head -1)
-
-# ブロック数の推移
-awk -F, 'NR>1 {print $2}' ~/gowenet-metrics/data/blockchain_*.csv | sort -n | tail -10
-```
-
-### リソースデータの確認
-
-```bash
-# 各ノードの平均CPU使用率
-for node in daikon tamago tomato tamanegi; do
-    file=$(ls -t ~/gowenet-metrics/data/resources_${node}_*.csv 2>/dev/null | head -1)
-    if [ -f "$file" ]; then
-        avg=$(awk -F, 'NR>1 {sum+=$3; count++} END {print sum/count}' "$file")
-        echo "$node: ${avg}%"
-    fi
-done
-```
-
-## 📝 バージョン情報
-
-- **Version:** 3.0
-- **Last Updated:** 2025-11-09
-- **Major Changes:** 
-  - ブロックチェーンメトリクスとリソースメトリクスを分離
-  - Pi1でブロックチェーン収集、全ノードでリソース収集
-  - データ重複を排除し、効率的な収集を実現
-
-## 🤝 サポート
-
-問題が発生した場合は、ログファイルを確認してください：
-- `~/gowenet-metrics/logs/blockchain_collection.log`
-- `~/gowenet-metrics/logs/resource_collection.log`
+このプロジェクトは教育・研究目的で使用されます。

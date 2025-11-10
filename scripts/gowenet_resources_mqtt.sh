@@ -166,14 +166,6 @@ check_mqtt_connection() {
 # MQTT接続チェック実行
 check_mqtt_connection
 
-# 開始メッセージを送信
-if [ "$MQTT_ENABLED" = "true" ]; then
-    start_timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "$start_timestamp" | mosquitto_pub -h "$MQTT_BROKER" -p "$MQTT_PORT" \
-        -t "gowenet/metrics/${HOSTNAME}/start" -l -q "$MQTT_QOS" 2>/dev/null
-    log "Sent start message to MQTT"
-fi
-
 # ========================================
 # CSVヘッダー作成
 # ========================================
@@ -384,14 +376,6 @@ done
 # ========================================
 
 TOTAL_RECORDS=$(wc -l < "$OUTPUT_FILE")
-
-# 終了メッセージを送信
-if [ "$MQTT_ENABLED" = "true" ]; then
-    end_timestamp=$(date '+%Y-%m-%d %H:%M:%S')
-    echo "$end_timestamp" | mosquitto_pub -h "$MQTT_BROKER" -p "$MQTT_PORT" \
-        -t "gowenet/metrics/${HOSTNAME}/end" -l -q "$MQTT_QOS" 2>/dev/null
-    log "Sent end message to MQTT"
-fi
 
 # 終了ステータスをMQTTで送信
 if [ "$MQTT_ENABLED" = "true" ]; then
